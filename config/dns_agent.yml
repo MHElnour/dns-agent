@@ -1,0 +1,58 @@
+server:
+  host: 127.0.0.1
+  port: 5354
+  upstream_dns: 1.1.1.1
+  max_workers: 50
+features:
+  enable_cache: true
+  enable_database: true
+  enable_stats: true
+cache:
+  max_size: 10000
+  min_ttl: 60
+  max_ttl: 86400
+database:
+  db_path: null  # Uses platform-specific path (e.g., ~/Library/Application Support/DNSAgent/data/dns_agent.db on macOS)
+  cleanup_days: 30
+  auto_cleanup: false
+blocklist:
+  blocklist_file: null  # Uses platform-specific path
+  whitelist_file: null  # Uses platform-specific path
+  auto_update: true
+  update_interval: 86400
+  update_on_startup: true
+  update_preset: balanced
+logging:
+  log_dir: null  # Uses platform-specific path (e.g., ~/Library/Application Support/DNSAgent/data on macOS)
+  console_level: WARNING
+  file_level: INFO
+  rotation: 10 MB
+  retention: 7 days
+  compression: zip
+performance:
+  socket_timeout: 1.0
+  upstream_timeout: 5.0
+  max_retries: 3
+dashboard:
+  enabled: true
+  host: 127.0.0.1
+  port: 9880
+  auth_required: false
+  username: admin
+  password: changeme
+statistics:
+  track_client_stats: true
+  track_domain_stats: true
+  top_domains_limit: 100
+  retention_days: 90
+advanced:
+  response_blocked_domains: NXDOMAIN
+  enable_ipv6: false
+  strict_domain_validation: true
+  case_sensitive_matching: false
+monitoring:
+  enabled: false
+  alert_on_high_block_rate: false
+  block_rate_threshold: 50
+  alert_email: null
+environment: production

@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS Agent Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.95em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+
+        .stat-success { color: #10b981; }
+        .stat-danger { color: #ef4444; }
+        .stat-info { color: #3b82f6; }
+        .stat-warning { color: #f59e0b; }
+
+        .progress-bar {
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            transition: width 0.3s ease;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #334155;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+        }
+
+        tr:hover {
+            background: #334155;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-blocked { background: #7f1d1d; color: #fca5a5; }
+        .badge-allowed { background: #065f46; color: #6ee7b7; }
+        .badge-cached { background: #1e3a8a; color: #93c5fd; }
+        .badge-error { background: #78350f; color: #fcd34d; }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            background: #475569;
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn:disabled:hover {
+            background: #475569;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-label {
+            min-width: 180px;
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chart-bar-fill {
+            height: 24px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 4px;
+            margin: 0 10px;
+            flex-grow: 1;
+            max-width: 400px;
+            transition: width 0.3s ease;
+        }
+
+        .chart-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #065f46;
+            color: #6ee7b7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #e2e8f0;
+        }
+
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #cbd5e1;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            background: #334155;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-group small {
+            display: block;
+            color: #64748b;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-section h3 {
+            color: #cbd5e1;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DNS Agent Dashboard <span class="refresh-indicator"></span></h1>
+            <p class="subtitle">Real-time DNS filtering and statistics</p>
+        </header>
+
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Navigation Tabs -->
+        <div style="display: flex; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid #334155;">
+            <button class="tab-btn active" onclick="showTab('dashboard')" id="dashboardTab">
+                Dashboard
+            </button>
+            <button class="tab-btn" onclick="showTab('settings')" id="settingsTab">
+                Settings
+            </button>
+            <button class="tab-btn" onclick="showTab('blocklist-sources')" id="blocklistSourcesTab">
+                Blocklist Sources
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardContent">
+            <!-- Statistics Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <!-- Query Stats Card -->
+                <div class="card">
+                    <h2 style="margin-bottom: 20px;">Query Statistics</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div class="stat-label">Total Queries</div>
+                            <div class="stat-value stat-info" id="totalQueries" style="font-size: 2em;">-</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Avg Response Time</div>
+                            <div class="stat-value stat-warning" id="avgResponseTime" style="font-size: 2em;">-</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #334155;">
+                        <div>
+                            <div class="stat-label">Blocked</div>
+                            <div class="stat-value stat-danger" id="blockedCount" style="font-size: 1.8em;">-</div>
+                            <div class="stat-label" style="margin-top: 5px;"><span id="blockRate">-</span>%</div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill" id="blockProgress" style="width: 0%; background: #ef4444;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Allowed</div>
+                            <div class="stat-value stat-success" id="allowedCount" style="font-size: 1.8em;">-</div>
+                            <div class="stat-label" style="margin-top: 5px;"><span id="allowRate">-</span>%</div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill" id="allowProgress" style="width: 0%; background: #10b981;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cache Stats Card -->
+                <div class="card">
+                    <h2 style="margin-bottom: 20px;">Cache Performance</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div class="stat-label">Hit Rate</div>
+                            <div class="stat-value stat-success" id="cacheHitRate" style="font-size: 2em;">-</div>
+                            <div class="progress-bar" style="margin-top: 10px;">
+                                <div class="progress-fill" id="cacheProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Cached Responses</div>
+                            <div class="stat-value stat-info" id="cacheHits" style="font-size: 2em;">-</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #334155;">
+                        <div>
+                            <div class="stat-label">Cache Size</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px; color: #94a3b8;" id="cacheSize">-</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Cache Misses</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px; color: #94a3b8;" id="cacheMisses">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Blocklist Info & Controls -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h2>Blocklist Information</h2>
+            <div class="grid">
+                <div>
+                    <div class="stat-label">Blocked Domains</div>
+                    <div style="font-size: 1.5em; font-weight: 600; margin-top: 5px;" id="blockedDomains">-</div>
+                </div>
+                <div>
+                    <div class="stat-label">Wildcard Rules</div>
+                    <div style="font-size: 1.5em; font-weight: 600; margin-top: 5px;" id="wildcardDomains">-</div>
+                </div>
+                <div>
+                    <div class="stat-label">Whitelisted</div>
+                    <div style="font-size: 1.5em; font-weight: 600; margin-top: 5px;" id="whitelistedDomains">-</div>
+                </div>
+                <div>
+                    <div class="stat-label">Last Update</div>
+                    <div style="font-size: 1.5em; font-weight: 600; margin-top: 5px;" id="lastUpdate">-</div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="updateBlocklist()">Update Blocklist Now</button>
+                <button class="btn btn-danger" onclick="clearCache()">Clear Cache</button>
+            </div>
+        </div>
+
+        <!-- Top Domains -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h2 style="margin-bottom: 20px;">Top Domains (Last 7 Days)</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div>
+                    <h3 style="color: #ef4444; font-size: 0.95em; margin-bottom: 15px; font-weight: 600;">Most Blocked</h3>
+                    <div id="topBlockedChart" class="loading" style="padding: 20px;">Loading...</div>
+                </div>
+                <div>
+                    <h3 style="color: #10b981; font-size: 0.95em; margin-bottom: 15px; font-weight: 600;">Most Allowed</h3>
+                    <div id="topAllowedChart" class="loading" style="padding: 20px;">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Queries -->
+        <div class="card">
+            <h2>Recent Queries</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="color: #94a3b8; font-size: 0.9em;">Show:</span>
+                    <select id="queriesPerPage" onchange="changePageSize()" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                    <span style="color: #94a3b8; font-size: 0.9em;">entries</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="previousPage()" id="prevBtn" disabled>Previous</button>
+                    <span style="color: #94a3b8; font-size: 0.9em; line-height: 38px;">Page <span id="currentPage">1</span></span>
+                    <button class="btn" onclick="nextPage()" id="nextBtn">Next</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="recentQueries">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Domain</th>
+                            <th>Type</th>
+                            <th>Result</th>
+                            <th>Response Time</th>
+                            <th>Client IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentQueriesBody">
+                        <tr><td colspan="6" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsContent" style="display: none;">
+            <div class="card" style="margin-bottom: 30px;">
+                <h2 style="margin-bottom: 20px;">DNS Server Settings</h2>
+
+                <div class="settings-section">
+                    <h3>Server Configuration</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Host Address</label>
+                            <input type="text" id="settingHost" value="127.0.0.1">
+                            <small>IP address to bind to (requires restart)</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Port</label>
+                            <input type="number" id="settingPort" value="5354">
+                            <small>DNS port (requires restart, use 53 for system-wide)</small>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Upstream DNS</label>
+                            <input type="text" id="settingUpstream" value="8.8.8.8">
+                            <small>Upstream DNS server to forward queries to</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Workers</label>
+                            <input type="number" id="settingMaxWorkers" value="50">
+                            <small>Maximum concurrent query handlers</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Blocklist Configuration</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Auto-Update</label>
+                            <select id="settingAutoUpdate">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                            <small>Automatically update blocklists</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Update Preset</label>
+                            <select id="settingPreset">
+                                <option value="minimal">Minimal</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="aggressive">Aggressive</option>
+                                <option value="family">Family</option>
+                                <option value="productivity">Productivity</option>
+                                <option value="security">Security</option>
+                            </select>
+                            <small>Blocklist preset to use</small>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Update Interval (hours)</label>
+                            <input type="number" id="settingUpdateInterval" value="24">
+                            <small>How often to update blocklists</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Update on Startup</label>
+                            <select id="settingUpdateOnStartup">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                            <small>Update blocklists when server starts</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cache Settings</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Cache Size</label>
+                            <input type="number" id="settingCacheSize" value="10000">
+                            <small>Maximum entries</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Min TTL (seconds)</label>
+                            <input type="number" id="settingMinTTL" value="60">
+                            <small>Minimum cache lifetime</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Max TTL (seconds)</label>
+                            <input type="number" id="settingMaxTTL" value="86400">
+                            <small>Maximum cache lifetime</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Logging Settings</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Console Log Level</label>
+                            <select id="settingConsoleLevel">
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO">Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                            <small>Minimum level for console output</small>
+                        </div>
+                        <div class="form-group">
+                            <label>File Log Level</label>
+                            <select id="settingFileLevel">
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO">Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                            <small>Minimum level for file logging</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" onclick="loadSettings()">Reload Settings</button>
+                    <button class="btn" style="background: #10b981;" onclick="saveSettings()">Save Settings</button>
+                </div>
+                <p style="color: #64748b; font-size: 0.9em; margin-top: 15px;">
+                    Note: Some settings require a server restart to take effect. The configuration will be saved to config/dns_agent.yml
+                </p>
+            </div>
+        </div>
+
+        <!-- Blocklist Sources Tab -->
+        <div id="blocklistSourcesContent" style="display: none;">
+            <div class="card" style="margin-bottom: 30px;">
+                <h2 style="margin-bottom: 20px;">Blocklist Sources Configuration</h2>
+
+                <div id="blocklistSourcesList">
+                    <p style="color: #64748b;">Loading...</p>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" onclick="loadBlocklistSources()">Reload</button>
+                    <button class="btn" style="background: #10b981;" onclick="saveBlocklistSources()">Save Changes</button>
+                </div>
+                <p style="color: #64748b; font-size: 0.9em; margin-top: 15px;">
+                    Enable or disable blocklist sources below. Changes will take effect on next blocklist update.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh intervals
+        const STATS_REFRESH_INTERVAL = 5000;  // 5 seconds for stats
+        const QUERIES_REFRESH_INTERVAL = 5000;  // 5 seconds for queries
+        const CHARTS_REFRESH_INTERVAL = 30000;  // 30 seconds for top domains charts
+
+        // Pagination state
+        let currentPage = 1;
+        let queriesPerPage = 50;
+        let allQueries = [];
+
+        // Fetch and update statistics
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                // Update main stats
+                document.getElementById('totalQueries').textContent = stats.total_queries.toLocaleString();
+                document.getElementById('blockedCount').textContent = stats.queries_blocked.toLocaleString();
+                document.getElementById('allowedCount').textContent = stats.queries_allowed.toLocaleString();
+
+                // Calculate and update block/allow rates
+                const blockRate = stats.total_queries > 0
+                    ? ((stats.queries_blocked / stats.total_queries) * 100).toFixed(1)
+                    : 0;
+                const allowRate = stats.total_queries > 0
+                    ? ((stats.queries_allowed / stats.total_queries) * 100).toFixed(1)
+                    : 0;
+                document.getElementById('blockRate').textContent = blockRate;
+                document.getElementById('allowRate').textContent = allowRate;
+                document.getElementById('blockProgress').style.width = blockRate + '%';
+                document.getElementById('allowProgress').style.width = allowRate + '%';
+
+                // Update cache stats if available
+                if (stats.cache_stats) {
+                    const cacheHitRate = stats.cache_stats.hits + stats.cache_stats.misses > 0
+                        ? ((stats.cache_stats.hits / (stats.cache_stats.hits + stats.cache_stats.misses)) * 100).toFixed(1)
+                        : 0;
+                    document.getElementById('cacheHitRate').textContent = cacheHitRate + '%';
+                    document.getElementById('cacheHits').textContent = stats.cache_stats.hits.toLocaleString();
+                    document.getElementById('cacheMisses').textContent = stats.cache_stats.misses.toLocaleString();
+                    document.getElementById('cacheSize').textContent =
+                        stats.cache_stats.size.toLocaleString() + ' / ' + stats.cache_stats.max_size.toLocaleString();
+                    document.getElementById('cacheProgress').style.width = cacheHitRate + '%';
+                } else {
+                    document.getElementById('cacheHitRate').textContent = 'N/A';
+                    document.getElementById('cacheHits').textContent = '0';
+                    document.getElementById('cacheMisses').textContent = '0';
+                    document.getElementById('cacheSize').textContent = '0 / 0';
+                }
+
+                // Update average response time
+                const avgTime = stats.total_queries > 0 && stats.total_response_time_ms > 0
+                    ? (stats.total_response_time_ms / stats.total_queries).toFixed(1)
+                    : 0;
+                document.getElementById('avgResponseTime').textContent = avgTime + ' ms';
+
+                // Update blocklist info
+                if (stats.blocklist) {
+                    document.getElementById('blockedDomains').textContent =
+                        stats.blocklist.blocked_domains.toLocaleString();
+                    document.getElementById('wildcardDomains').textContent =
+                        stats.blocklist.wildcard_domains.toLocaleString();
+                    document.getElementById('whitelistedDomains').textContent =
+                        (stats.blocklist.whitelist_domains + stats.blocklist.whitelist_wildcards).toLocaleString();
+                }
+
+                // Update last update time
+                if (stats.auto_updater && stats.auto_updater.last_update) {
+                    const lastUpdate = new Date(stats.auto_updater.last_update * 1000);
+                    const now = new Date();
+                    const diffHours = Math.floor((now - lastUpdate) / (1000 * 60 * 60));
+
+                    if (diffHours < 1) {
+                        document.getElementById('lastUpdate').textContent = '< 1 hour ago';
+                    } else if (diffHours < 24) {
+                        document.getElementById('lastUpdate').textContent = diffHours + ' hours ago';
+                    } else {
+                        const diffDays = Math.floor(diffHours / 24);
+                        document.getElementById('lastUpdate').textContent = diffDays + ' days ago';
+                    }
+                } else {
+                    document.getElementById('lastUpdate').textContent = 'Never';
+                }
+
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Fetch and update recent queries
+        async function updateRecentQueries() {
+            try {
+                // Fetch more queries to support pagination (max 500)
+                const response = await fetch('/api/queries/recent?limit=500');
+                const queries = await response.json();
+
+                allQueries = queries;
+
+                // Render current page
+                renderQueriesPage();
+
+            } catch (error) {
+                console.error('Error fetching recent queries:', error);
+            }
+        }
+
+        // Render the current page of queries
+        function renderQueriesPage() {
+            const tbody = document.getElementById('recentQueriesBody');
+
+            if (allQueries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">No queries yet</td></tr>';
+                updatePaginationButtons();
+                return;
+            }
+
+            // Calculate pagination
+            const startIndex = (currentPage - 1) * queriesPerPage;
+            const endIndex = startIndex + queriesPerPage;
+            const pageQueries = allQueries.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageQueries.map(q => {
+                const time = new Date(q.timestamp).toLocaleTimeString();
+                const resultBadge = q.result === 'BLOCKED' ? 'badge-blocked' :
+                                   q.result === 'ALLOWED' ? 'badge-allowed' :
+                                   'badge-error';
+                const cachedBadge = q.cached ? '<span class="badge badge-cached">CACHED</span> ' : '';
+
+                return `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${q.domain}</td>
+                        <td>${q.query_type}</td>
+                        <td>${cachedBadge}<span class="badge ${resultBadge}">${q.result}</span></td>
+                        <td>${q.response_time_ms ? q.response_time_ms + ' ms' : '-'}</td>
+                        <td>${q.client_ip}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            updatePaginationButtons();
+        }
+
+        // Update pagination button states
+        function updatePaginationButtons() {
+            const totalPages = Math.ceil(allQueries.length / queriesPerPage);
+
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages || allQueries.length === 0;
+        }
+
+        // Pagination controls
+        function nextPage() {
+            const totalPages = Math.ceil(allQueries.length / queriesPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderQueriesPage();
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderQueriesPage();
+            }
+        }
+
+        function changePageSize() {
+            queriesPerPage = parseInt(document.getElementById('queriesPerPage').value);
+            currentPage = 1;  // Reset to first page
+            renderQueriesPage();
+        }
+
+        // Fetch and update top blocked domains
+        async function updateTopBlocked() {
+            try {
+                const response = await fetch('/api/queries/top-blocked?limit=5');
+                const domains = await response.json();
+
+                const container = document.getElementById('topBlockedChart');
+
+                if (domains.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No blocked queries yet</div>';
+                    return;
+                }
+
+                const maxCount = Math.max(...domains.map(d => d.count));
+
+                container.innerHTML = domains.map(d => {
+                    const width = (d.count / maxCount * 100).toFixed(1);
+                    return `
+                        <div class="chart-bar" style="margin-bottom: 10px;">
+                            <div class="chart-label" style="font-size: 0.85em; min-width: 150px;">${d.domain}</div>
+                            <div class="chart-bar-fill" style="width: ${width}%; height: 20px; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+                            <div class="chart-value" style="font-size: 0.85em;">${d.count.toLocaleString()}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error fetching top blocked:', error);
+            }
+        }
+
+        // Fetch and update top allowed domains
+        async function updateTopAllowed() {
+            try {
+                const response = await fetch('/api/queries/top-allowed?limit=5');
+                const domains = await response.json();
+
+                const container = document.getElementById('topAllowedChart');
+
+                if (domains.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No allowed queries yet</div>';
+                    return;
+                }
+
+                const maxCount = Math.max(...domains.map(d => d.count));
+
+                container.innerHTML = domains.map(d => {
+                    const width = (d.count / maxCount * 100).toFixed(1);
+                    return `
+                        <div class="chart-bar" style="margin-bottom: 10px;">
+                            <div class="chart-label" style="font-size: 0.85em; min-width: 150px;">${d.domain}</div>
+                            <div class="chart-bar-fill" style="width: ${width}%; height: 20px; background: linear-gradient(90deg, #10b981, #059669);"></div>
+                            <div class="chart-value" style="font-size: 0.85em;">${d.count.toLocaleString()}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error fetching top allowed:', error);
+            }
+        }
+
+        // Update blocklist now
+        async function updateBlocklist() {
+            try {
+                const response = await fetch('/api/blocklist/update', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('Blocklist update triggered! This may take a minute...');
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error triggering update: ' + error.message);
+            }
+        }
+
+        // Clear cache
+        async function clearCache() {
+            if (!confirm('Are you sure you want to clear the DNS cache?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/cache/clear', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('Cache cleared successfully!');
+                    updateStats();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error clearing cache: ' + error.message);
+            }
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const msgElement = document.getElementById('successMessage');
+            msgElement.textContent = message;
+            msgElement.style.display = 'block';
+
+            setTimeout(() => {
+                msgElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initial load
+        updateStats();
+        updateRecentQueries();
+        updateTopBlocked();
+        updateTopAllowed();
+
+        // Auto-refresh with different intervals
+        // Stats refresh every 5 seconds
+        setInterval(() => {
+            updateStats();
+        }, STATS_REFRESH_INTERVAL);
+
+        // Queries refresh every 5 seconds
+        setInterval(() => {
+            updateRecentQueries();
+        }, QUERIES_REFRESH_INTERVAL);
+
+        // Charts refresh every 30 seconds (less frequent)
+        setInterval(() => {
+            updateTopBlocked();
+            updateTopAllowed();
+        }, CHARTS_REFRESH_INTERVAL);
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab content
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('settingsContent').style.display = 'none';
+            document.getElementById('blocklistSourcesContent').style.display = 'none';
+
+            // Remove active class from all tabs
+            document.getElementById('dashboardTab').classList.remove('active');
+            document.getElementById('settingsTab').classList.remove('active');
+            document.getElementById('blocklistSourcesTab').classList.remove('active');
+
+            // Show selected tab and mark as active
+            if (tabName === 'dashboard') {
+                document.getElementById('dashboardContent').style.display = 'block';
+                document.getElementById('dashboardTab').classList.add('active');
+            } else if (tabName === 'settings') {
+                document.getElementById('settingsContent').style.display = 'block';
+                document.getElementById('settingsTab').classList.add('active');
+                loadSettings(); // Load settings when opening settings tab
+            } else if (tabName === 'blocklist-sources') {
+                document.getElementById('blocklistSourcesContent').style.display = 'block';
+                document.getElementById('blocklistSourcesTab').classList.add('active');
+                loadBlocklistSources(); // Load blocklist sources when opening tab
+            }
+        }
+
+        // Load settings from server
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings/load');
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('Error loading settings: ' + (result.error || 'Unknown error'));
+                    return;
+                }
+
+                const config = result.config;
+
+                // Server settings
+                if (config.server) {
+                    document.getElementById('settingHost').value = config.server.host || '127.0.0.1';
+                    document.getElementById('settingPort').value = config.server.port || 5354;
+                    document.getElementById('settingUpstream').value = config.server.upstream_dns || '8.8.8.8';
+                    document.getElementById('settingMaxWorkers').value = config.server.max_workers || 50;
+                }
+
+                // Blocklist settings
+                if (config.blocklist) {
+                    document.getElementById('settingAutoUpdate').value = config.blocklist.auto_update ? 'true' : 'false';
+                    document.getElementById('settingPreset').value = config.blocklist.update_preset || 'balanced';
+                    document.getElementById('settingUpdateInterval').value = (config.blocklist.update_interval || 86400) / 3600;
+                    document.getElementById('settingUpdateOnStartup').value = config.blocklist.update_on_startup ? 'true' : 'false';
+                }
+
+                // Cache settings
+                if (config.cache) {
+                    document.getElementById('settingCacheSize').value = config.cache.max_size || 10000;
+                    document.getElementById('settingMinTTL').value = config.cache.min_ttl || 60;
+                    document.getElementById('settingMaxTTL').value = config.cache.max_ttl || 86400;
+                }
+
+                // Logging settings
+                if (config.logging) {
+                    document.getElementById('settingConsoleLevel').value = config.logging.console_level || 'WARNING';
+                    document.getElementById('settingFileLevel').value = config.logging.file_level || 'INFO';
+                }
+
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                alert('Error loading settings: ' + error.message);
+            }
+        }
+
+        // Save settings to server
+        async function saveSettings() {
+            // Collect form values
+            const settings = {
+                server: {
+                    host: document.getElementById('settingHost').value,
+                    port: parseInt(document.getElementById('settingPort').value),
+                    upstream_dns: document.getElementById('settingUpstream').value,
+                    max_workers: parseInt(document.getElementById('settingMaxWorkers').value)
+                },
+                blocklist: {
+                    auto_update: document.getElementById('settingAutoUpdate').value === 'true',
+                    update_preset: document.getElementById('settingPreset').value,
+                    update_interval: parseInt(document.getElementById('settingUpdateInterval').value) * 3600,
+                    update_on_startup: document.getElementById('settingUpdateOnStartup').value === 'true'
+                },
+                cache: {
+                    max_size: parseInt(document.getElementById('settingCacheSize').value),
+                    min_ttl: parseInt(document.getElementById('settingMinTTL').value),
+                    max_ttl: parseInt(document.getElementById('settingMaxTTL').value)
+                },
+                logging: {
+                    console_level: document.getElementById('settingConsoleLevel').value,
+                    file_level: document.getElementById('settingFileLevel').value
+                }
+            };
+
+            const selectedPreset = settings.blocklist.update_preset;
+
+            try {
+                const response = await fetch('/api/settings/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Also update blocklist sources to match the selected preset
+                    try {
+                        const sourcesResponse = await fetch('/api/blocklist-sources/load');
+                        const sourcesResult = await sourcesResponse.json();
+
+                        if (sourcesResult.success && sourcesResult.config) {
+                            const sourcesConfig = sourcesResult.config;
+
+                            // Find the preset
+                            if (sourcesConfig.presets && sourcesConfig.presets[selectedPreset]) {
+                                const preset = sourcesConfig.presets[selectedPreset];
+
+                                // Disable all sources first
+                                for (const sourceId in sourcesConfig.sources) {
+                                    sourcesConfig.sources[sourceId].enabled = false;
+                                }
+
+                                // Enable sources in the selected preset
+                                for (const sourceId of preset.sources || []) {
+                                    if (sourcesConfig.sources[sourceId]) {
+                                        sourcesConfig.sources[sourceId].enabled = true;
+                                    }
+                                }
+
+                                // Save the updated blocklist sources
+                                await fetch('/api/blocklist-sources/save', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(sourcesConfig)
+                                });
+
+                                // Update the blocklist sources data if it's loaded
+                                blocklistSourcesData = sourcesConfig;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error syncing blocklist sources with preset:', error);
+                    }
+
+                    showSuccess('Settings saved successfully! Restart the server for changes to take effect.');
+                } else {
+                    alert('Error saving settings: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings: ' + error.message);
+            }
+        }
+
+        // Blocklist Sources Management
+        let blocklistSourcesData = null;
+
+        async function loadBlocklistSources() {
+            try {
+                const response = await fetch('/api/blocklist-sources/load');
+                const result = await response.json();
+
+                if (result.success) {
+                    blocklistSourcesData = result.config;
+                    displayBlocklistSources(blocklistSourcesData);
+                } else {
+                    document.getElementById('blocklistSourcesList').innerHTML =
+                        '<p style="color: #ef4444;">Error loading blocklist sources: ' + result.error + '</p>';
+                }
+            } catch (error) {
+                console.error('Error loading blocklist sources:', error);
+                document.getElementById('blocklistSourcesList').innerHTML =
+                    '<p style="color: #ef4444;">Error loading blocklist sources: ' + error.message + '</p>';
+            }
+        }
+
+        function displayBlocklistSources(config) {
+            const container = document.getElementById('blocklistSourcesList');
+
+            if (!config || (!config.sources && !config.presets)) {
+                container.innerHTML = '<p style="color: #64748b;">No blocklist sources configuration found.</p>';
+                return;
+            }
+
+            let html = '';
+
+            // Determine current active preset
+            const enabledSourceIds = Object.entries(config.sources || {})
+                .filter(([id, info]) => info.enabled !== false)
+                .map(([id]) => id)
+                .sort();
+
+            let activePreset = null;
+            if (config.presets) {
+                for (const [presetName, presetInfo] of Object.entries(config.presets)) {
+                    const presetSources = (presetInfo.sources || []).sort();
+                    if (JSON.stringify(presetSources) === JSON.stringify(enabledSourceIds)) {
+                        activePreset = presetName;
+                        break;
+                    }
+                }
+            }
+
+            // Display Presets
+            if (config.presets) {
+                html += '<div style="margin-bottom: 30px;">';
+                html += '<h3 style="color: #cbd5e1; margin-bottom: 15px;">Available Presets</h3>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">';
+
+                for (const [presetName, presetInfo] of Object.entries(config.presets)) {
+                    const isActive = activePreset === presetName;
+                    const borderColor = isActive ? '#10b981' : '#334155';
+                    const bgColor = isActive ? '#1e3a32' : '#0f172a';
+
+                    html += `<div onclick="applyPreset('${presetName}')" style="background: ${bgColor}; padding: 15px; border-radius: 8px; border: 2px solid ${borderColor}; cursor: pointer; transition: all 0.2s; position: relative;" onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor='${borderColor}'">`;
+
+                    if (isActive) {
+                        html += '<div style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: 600;">ACTIVE</div>';
+                    }
+
+                    html += `<div style="font-weight: 600; color: #e2e8f0; margin-bottom: 8px; text-transform: capitalize;">${presetName}</div>`;
+                    html += `<div style="font-size: 0.9em; color: #94a3b8; margin-bottom: 10px;">${presetInfo.description || 'N/A'}</div>`;
+                    html += `<div style="font-size: 0.85em; color: #64748b;">Sources: ${presetInfo.sources ? presetInfo.sources.length : 0}</div>`;
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                html += '<p style="color: #64748b; font-size: 0.9em; margin-top: 15px;">Click a preset to apply it (enables selected sources)</p>';
+                html += '</div>';
+            }
+
+            // Display Sources
+            if (config.sources) {
+                html += '<div>';
+                html += '<h3 style="color: #cbd5e1; margin-bottom: 15px;">Blocklist Sources</h3>';
+                html += '<div style="display: grid; gap: 15px;">';
+
+                for (const [sourceId, sourceInfo] of Object.entries(config.sources)) {
+                    const isEnabled = sourceInfo.enabled !== false;
+                    const category = sourceInfo.category || 'general';
+                    const categoryColors = {
+                        'ads': '#3b82f6',
+                        'malware': '#ef4444',
+                        'tracking': '#8b5cf6',
+                        'adult': '#ec4899',
+                        'social': '#06b6d4',
+                        'general': '#64748b'
+                    };
+                    const categoryColor = categoryColors[category] || categoryColors['general'];
+
+                    html += '<div style="background: #0f172a; padding: 20px; border-radius: 8px; border: 1px solid #334155;">';
+                    html += '<div style="display: flex; justify-content: space-between; align-items: start;">';
+                    html += '<div style="flex: 1;">';
+                    html += `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">`;
+                    html += `<span style="font-weight: 600; color: #e2e8f0; font-size: 1.05em;">${sourceInfo.name || sourceId}</span>`;
+                    html += `<span style="background: ${categoryColor}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 500;">${category}</span>`;
+                    html += `</div>`;
+                    html += `<div style="font-size: 0.85em; color: #64748b; margin-bottom: 6px;">ID: <span style="color: #94a3b8;">${sourceId}</span></div>`;
+                    html += `<div style="font-size: 0.9em; color: #cbd5e1; margin-bottom: 10px;">${sourceInfo.description || 'No description'}</div>`;
+                    html += `<div style="font-size: 0.85em; color: #64748b;">Format: <span style="color: #94a3b8;">${sourceInfo.format || 'N/A'}</span></div>`;
+                    if (sourceInfo.url) {
+                        html += `<div style="font-size: 0.8em; color: #3b82f6; margin-top: 8px; word-break: break-all; font-family: monospace;">${sourceInfo.url}</div>`;
+                    }
+                    html += '</div>';
+                    html += '<div style="margin-left: 20px;">';
+                    html += `<label class="switch">`;
+                    html += `<input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleSource('${sourceId}', this.checked)">`;
+                    html += `<span class="slider"></span>`;
+                    html += `</label>`;
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function applyPreset(presetName) {
+            if (!blocklistSourcesData || !blocklistSourcesData.presets || !blocklistSourcesData.sources) {
+                alert('Cannot apply preset: configuration not loaded');
+                return;
+            }
+
+            const preset = blocklistSourcesData.presets[presetName];
+            if (!preset || !preset.sources) {
+                alert('Preset not found or has no sources');
+                return;
+            }
+
+            // Disable all sources first
+            for (const sourceId in blocklistSourcesData.sources) {
+                blocklistSourcesData.sources[sourceId].enabled = false;
+            }
+
+            // Enable sources in the preset
+            for (const sourceId of preset.sources) {
+                if (blocklistSourcesData.sources[sourceId]) {
+                    blocklistSourcesData.sources[sourceId].enabled = true;
+                }
+            }
+
+            // Refresh display
+            displayBlocklistSources(blocklistSourcesData);
+
+            // Also update the main settings to reflect the preset change
+            try {
+                const response = await fetch('/api/settings/load');
+                const result = await response.json();
+
+                if (result.success) {
+                    const config = result.config;
+
+                    // Update the preset in blocklist settings
+                    if (!config.blocklist) {
+                        config.blocklist = {};
+                    }
+                    config.blocklist.update_preset = presetName;
+
+                    // Save the updated config
+                    await fetch('/api/settings/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(config)
+                    });
+
+                    // Update the settings UI if it's loaded
+                    const presetSelect = document.getElementById('settingPreset');
+                    if (presetSelect) {
+                        presetSelect.value = presetName;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating preset in main config:', error);
+            }
+
+            // Show feedback
+            showSuccess(`Applied preset: ${presetName}`);
+        }
+
+        function toggleSource(sourceId, enabled) {
+            if (!blocklistSourcesData || !blocklistSourcesData.sources) {
+                return;
+            }
+
+            if (blocklistSourcesData.sources[sourceId]) {
+                blocklistSourcesData.sources[sourceId].enabled = enabled;
+            }
+        }
+
+        async function saveBlocklistSources() {
+            if (!blocklistSourcesData) {
+                alert('No blocklist sources data to save');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/blocklist-sources/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(blocklistSourcesData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('Blocklist sources saved successfully!');
+                    // Reload to confirm changes
+                    await loadBlocklistSources();
+                } else {
+                    alert('Error saving blocklist sources: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving blocklist sources:', error);
+                alert('Error saving blocklist sources: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

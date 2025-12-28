@@ -1,0 +1,146 @@
+# Blocklist Sources Configuration
+# Add, remove, or modify sources as needed
+
+sources:
+  # StevenBlack Unified Hosts - Popular and well-maintained
+  stevenblack:
+    name: "StevenBlack Unified Hosts"
+    url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+    format: "hosts"
+    description: "Unified hosts file with ads and malware domains"
+    enabled: true
+    category: "general"
+
+  # StevenBlack Variants
+  stevenblack-fakenews:
+    name: "StevenBlack + Fake News"
+    url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews/hosts"
+    format: "hosts"
+    description: "Unified hosts file including fake news sites"
+    enabled: false
+    category: "content-filtering"
+
+  stevenblack-gambling:
+    name: "StevenBlack + Gambling"
+    url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling/hosts"
+    format: "hosts"
+    description: "Unified hosts file including gambling sites"
+    enabled: false
+    category: "content-filtering"
+
+  stevenblack-porn:
+    name: "StevenBlack + Adult Content"
+    url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts"
+    format: "hosts"
+    description: "Unified hosts file including adult content sites"
+    enabled: false
+    category: "content-filtering"
+
+  stevenblack-social:
+    name: "StevenBlack + Social Media"
+    url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/social/hosts"
+    format: "hosts"
+    description: "Unified hosts file including social media sites"
+    enabled: false
+    category: "productivity"
+
+  # AdGuard DNS Filter
+  adguard-dns:
+    name: "AdGuard DNS Filter"
+    url: "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt"
+    format: "adblock"
+    description: "AdGuard DNS filter for blocking ads and trackers"
+    enabled: true
+    category: "general"
+
+  # EasyList - Ad Blocking
+  easylist:
+    name: "EasyList"
+    url: "https://easylist.to/easylist/easylist.txt"
+    format: "adblock"
+    description: "Primary filter list for blocking ads"
+    enabled: false
+    category: "ads"
+
+  # EasyPrivacy - Tracking Protection
+  easyprivacy:
+    name: "EasyPrivacy"
+    url: "https://easylist.to/easylist/easyprivacy.txt"
+    format: "adblock"
+    description: "Filter list for blocking tracking and analytics"
+    enabled: false
+    category: "privacy"
+
+  # Security Lists
+  malware-domains:
+    name: "Malware Domain List"
+    url: "https://gitlab.com/quidsup/notrack-blocklists/-/raw/master/notrack-malware.txt"
+    format: "domains"
+    description: "Known malware domains"
+    enabled: true
+    category: "security"
+
+  phishing-army:
+    name: "PhishTank Phishing List"
+    url: "https://phishing.army/download/phishing_army_blocklist_extended.txt"
+    format: "domains"
+    description: "Phishing and fraud domains"
+    enabled: false
+    category: "security"
+
+# Recommended presets for different use cases
+presets:
+  # Minimal - Just essential blocking
+  minimal:
+    description: "Basic ad and malware blocking"
+    sources:
+      - stevenblack
+
+  # Balanced - Good protection without breaking sites
+  balanced:
+    description: "Balanced protection - ads, trackers, and malware"
+    sources:
+      - stevenblack
+      - adguard-dns
+      - malware-domains
+
+  # Aggressive - Maximum protection
+  aggressive:
+    description: "Maximum protection - may break some sites"
+    sources:
+      - stevenblack
+      - adguard-dns
+      - easylist
+      - easyprivacy
+      - malware-domains
+      - phishing-army
+
+  # Family - Block adult content
+  family:
+    description: "Family-friendly - blocks adult content"
+    sources:
+      - stevenblack-porn
+      - malware-domains
+
+  # Productivity - Block social media
+  productivity:
+    description: "Productivity mode - blocks social media"
+    sources:
+      - stevenblack-social
+      - malware-domains
+
+  # Security - Focus on malware and phishing
+  security:
+    description: "Security-focused - malware and phishing only"
+    sources:
+      - malware-domains
+      - phishing-army
+
+# Update settings
+update:
+  auto_update: false          # Enable automatic updates
+  update_interval: 86400      # Update interval in seconds (86400 = 24 hours)
+  timeout: 30                 # Download timeout in seconds
+  retry_attempts: 3           # Number of retry attempts on failure
+  include_comments: true      # Include source attribution in merged file
+  deduplicate: true           # Remove duplicate domains
