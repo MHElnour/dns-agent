@@ -79,7 +79,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting stats: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'Failed to retrieve statistics'}), 500
 
         @self.app.route('/api/queries/recent')
         def get_recent_queries():
@@ -95,7 +95,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting recent queries: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'Failed to retrieve recent queries'}), 500
 
         @self.app.route('/api/queries/timeline')
         def get_query_timeline():
@@ -111,7 +111,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting query timeline: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'Failed to retrieve query timeline'}), 500
 
         @self.app.route('/api/queries/top-blocked')
         def get_top_blocked():
@@ -132,7 +132,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting top blocked domains: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/queries/top-allowed')
         def get_top_allowed():
@@ -153,7 +153,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting top allowed domains: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/blocklist/sources')
         def get_blocklist_sources():
@@ -174,7 +174,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting blocklist sources: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/blocklist/update', methods=['POST'])
         def trigger_blocklist_update():
@@ -193,7 +193,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error triggering blocklist update: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/cache/clear', methods=['POST'])
         def clear_cache():
@@ -207,7 +207,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error clearing cache: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/server/info')
         def get_server_info():
@@ -228,7 +228,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error getting server info: {e}")
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/settings/load')
         def load_settings():
@@ -253,7 +253,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error loading settings: {e}")
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/settings/save', methods=['POST'])
         def save_settings():
@@ -301,7 +301,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error saving settings: {e}")
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/blocklist-sources/load')
         def load_blocklist_sources():
@@ -325,7 +325,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error loading blocklist sources: {e}")
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/blocklist-sources/save', methods=['POST'])
         def save_blocklist_sources():
@@ -354,7 +354,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error saving blocklist sources: {e}")
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'An error occurred processing your request'}), 500
 
         @self.app.route('/api/blocklist-sources/reload', methods=['POST'])
         def reload_blocklists():
@@ -386,7 +386,7 @@ class Dashboard:
 
             except Exception as e:
                 self.logger.error(f"Error triggering blocklist reload: {e}")
-                return jsonify({'success': False, 'error': str(e)}), 500
+                return jsonify({'success': False, 'error': 'An error occurred processing your request'}), 500
 
     def start(self):
         """Start dashboard server in background thread"""
