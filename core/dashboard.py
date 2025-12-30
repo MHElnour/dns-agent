@@ -356,6 +356,38 @@ class Dashboard:
                 self.logger.error(f"Error saving blocklist sources: {e}")
                 return jsonify({'success': False, 'error': str(e)}), 500
 
+        @self.app.route('/api/blocklist-sources/reload', methods=['POST'])
+        def reload_blocklists():
+            """Trigger blocklist update"""
+            try:
+                if hasattr(self.dns_server, 'blocklist') and self.dns_server.blocklist:
+                    # Trigger update in background
+                    from threading import Thread
+
+                    def update_blocklists():
+                        try:
+                            self.logger.info("Manual blocklist reload triggered from dashboard")
+                            self.dns_server.blocklist.update_blocklists()
+                            self.logger.info("Blocklist reload completed")
+                        except Exception as e:
+                            self.logger.error(f"Error reloading blocklists: {e}")
+
+                    Thread(target=update_blocklists, daemon=True).start()
+
+                    return jsonify({
+                        'success': True,
+                        'message': 'Blocklist reload started. This may take a few minutes.'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Blocklist system not initialized'
+                    }), 500
+
+            except Exception as e:
+                self.logger.error(f"Error triggering blocklist reload: {e}")
+                return jsonify({'success': False, 'error': str(e)}), 500
+
     def start(self):
         """Start dashboard server in background thread"""
         if self.running:

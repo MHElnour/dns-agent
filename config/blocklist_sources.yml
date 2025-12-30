@@ -88,6 +88,77 @@ sources:
     enabled: false
     category: "security"
 
+  # Tracker Prevention Lists
+  disconnect-tracking:
+    name: "Disconnect Tracking Protection"
+    url: "https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt"
+    format: "domains"
+    description: "Block tracking and analytics services"
+    enabled: false
+    category: "privacy"
+
+  disconnect-ads:
+    name: "Disconnect Advertising"
+    url: "https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt"
+    format: "domains"
+    description: "Block advertising networks"
+    enabled: false
+    category: "privacy"
+
+  # NextDNS Privacy Lists
+  nextdns-native-trackers:
+    name: "NextDNS Native Tracking Protection"
+    url: "https://raw.githubusercontent.com/nextdns/native-tracking-domains/main/domains"
+    format: "domains"
+    description: "Block native app tracking (Samsung, Xiaomi, Huawei, etc.)"
+    enabled: false
+    category: "privacy"
+
+  # Peter Lowe's Ad/Tracking List
+  peter-lowe:
+    name: "Peter Lowe's Ad and Tracking Server List"
+    url: "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext"
+    format: "hosts"
+    description: "Comprehensive ad and tracker blocking"
+    enabled: false
+    category: "privacy"
+
+  # Dan Pollock's Hosts
+  dan-pollock:
+    name: "Dan Pollock's Hosts"
+    url: "https://someonewhocares.org/hosts/zero/hosts"
+    format: "hosts"
+    description: "Ad and tracker blocking hosts file"
+    enabled: false
+    category: "privacy"
+
+  # OISD - Comprehensive List
+  oisd-big:
+    name: "OISD Big List"
+    url: "https://big.oisd.nl/domainswild"
+    format: "domains"
+    description: "Comprehensive ads, trackers, and malware blocking"
+    enabled: false
+    category: "privacy"
+
+  # Telemetry Blocking
+  crazy-max-telemetry:
+    name: "Crazy Max Windows Spy Blocker"
+    url: "https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt"
+    format: "hosts"
+    description: "Block Windows telemetry and tracking"
+    enabled: false
+    category: "privacy"
+
+  # CNAME Cloaking Prevention
+  adguard-cname:
+    name: "AdGuard CNAME Disguised Trackers"
+    url: "https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/combined_disguised_trackers.txt"
+    format: "domains"
+    description: "Block CNAME-cloaked tracking domains"
+    enabled: false
+    category: "privacy"
+
 # Recommended presets for different use cases
 presets:
   # Minimal - Just essential blocking
@@ -102,6 +173,21 @@ presets:
     sources:
       - stevenblack
       - adguard-dns
+      - easyprivacy
+      - malware-domains
+      - nextdns-native-trackers
+
+  # Privacy - Anti-tracking focus
+  privacy:
+    description: "Privacy-focused - blocks trackers, analytics, and telemetry"
+    sources:
+      - stevenblack
+      - easyprivacy
+      - disconnect-tracking
+      - disconnect-ads
+      - nextdns-native-trackers
+      - adguard-cname
+      - peter-lowe
       - malware-domains
 
   # Aggressive - Maximum protection
@@ -112,6 +198,10 @@ presets:
       - adguard-dns
       - easylist
       - easyprivacy
+      - disconnect-tracking
+      - disconnect-ads
+      - oisd-big
+      - adguard-cname
       - malware-domains
       - phishing-army
 

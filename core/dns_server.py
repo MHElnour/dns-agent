@@ -24,7 +24,8 @@ class DNSServer:
     """
 
     def __init__(self, host='127.0.0.1', port=5354, upstream_dns='8.8.8.8',
-                 enable_cache=True, enable_database=True, max_workers=50, config=None):
+                 enable_cache=True, enable_database=True, max_workers=50, config=None,
+                 dns_manager=None):
         """
         Initialize DNS server
 
@@ -43,6 +44,7 @@ class DNSServer:
         self.upstream_dns = upstream_dns
         self.sock = None
         self.config = config
+        self.dns_manager = dns_manager  # For managing system DNS settings
 
         # Components - use config if available
         blocklist_file = config.blocklist_file if config else 'config/blocklists.txt'
@@ -135,6 +137,13 @@ class DNSServer:
             # Start web dashboard if enabled
             if self.dashboard:
                 self.dashboard.start()
+
+            # Set system DNS to 127.0.0.1 AFTER blocklist update (uses original DNS)
+            if self.dns_manager:
+                if self.dns_manager.save_and_set_local_dns():
+                    self.logger.info("System DNS now points to this DNS server (127.0.0.1)")
+                else:
+                    self.logger.warning("Could not set system DNS - you may need to configure it manually")
 
             # Create and bind socket
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -450,6 +459,11 @@ class DNSServer:
         self.logger.info("Stopping DNS server...")
         self.running = False
         self.shutdown_event.set()
+
+        # Restore original DNS settings
+        if self.dns_manager and self.dns_manager.dns_changed:
+            self.logger.info("Restoring original DNS settings...")
+            self.dns_manager.restore_original_dns()
 
         # Stop auto-updater if running
         if self.auto_updater and self.auto_updater.is_running():

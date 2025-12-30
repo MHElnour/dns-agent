@@ -578,6 +578,7 @@
                             <select id="settingPreset">
                                 <option value="minimal">Minimal</option>
                                 <option value="balanced">Balanced</option>
+                                <option value="privacy">Privacy (Anti-Tracking)</option>
                                 <option value="aggressive">Aggressive</option>
                                 <option value="family">Family</option>
                                 <option value="productivity">Productivity</option>
@@ -670,11 +671,12 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn" onclick="loadBlocklistSources()">Reload</button>
+                    <button class="btn" onclick="loadBlocklistSources()">Reload Config</button>
                     <button class="btn" style="background: #10b981;" onclick="saveBlocklistSources()">Save Changes</button>
+                    <button class="btn" style="background: #3b82f6;" onclick="reloadBlocklists()">Update Blocklists Now</button>
                 </div>
                 <p style="color: #64748b; font-size: 0.9em; margin-top: 15px;">
-                    Enable or disable blocklist sources below. Changes will take effect on next blocklist update.
+                    Toggling sources auto-saves. Click "Update Blocklists Now" to download and apply changes immediately.
                 </p>
             </div>
         </div>
@@ -1166,6 +1168,11 @@
 
                 if (result.success) {
                     blocklistSourcesData = result.config;
+
+                    // Detect and set the currently active preset on page load
+                    currentActivePreset = detectActivePreset(blocklistSourcesData);
+                    console.log('Detected active preset:', currentActivePreset);
+
                     displayBlocklistSources(blocklistSourcesData);
                 } else {
                     document.getElementById('blocklistSourcesList').innerHTML =
@@ -1176,6 +1183,28 @@
                 document.getElementById('blocklistSourcesList').innerHTML =
                     '<p style="color: #ef4444;">Error loading blocklist sources: ' + error.message + '</p>';
             }
+        }
+
+        function detectActivePreset(config) {
+            if (!config || !config.sources || !config.presets) {
+                return null;
+            }
+
+            // Get currently enabled sources
+            const enabledSourceIds = Object.entries(config.sources)
+                .filter(([id, info]) => info.enabled !== false)
+                .map(([id]) => id)
+                .sort();
+
+            // Find matching preset
+            for (const [presetName, presetInfo] of Object.entries(config.presets)) {
+                const presetSources = (presetInfo.sources || []).sort();
+                if (JSON.stringify(presetSources) === JSON.stringify(enabledSourceIds)) {
+                    return presetName;
+                }
+            }
+
+            return null; // No matching preset found
         }
 
         function displayBlocklistSources(config) {
@@ -1283,6 +1312,9 @@
             container.innerHTML = html;
         }
 
+        // Track the currently active preset
+        let currentActivePreset = null;
+
         async function applyPreset(presetName) {
             if (!blocklistSourcesData || !blocklistSourcesData.presets || !blocklistSourcesData.sources) {
                 alert('Cannot apply preset: configuration not loaded');
@@ -1294,6 +1326,9 @@
                 alert('Preset not found or has no sources');
                 return;
             }
+
+            // Set this as the active preset
+            currentActivePreset = presetName;
 
             // Disable all sources first
             for (const sourceId in blocklistSourcesData.sources) {
@@ -1307,8 +1342,8 @@
                 }
             }
 
-            // Refresh display
-            displayBlocklistSources(blocklistSourcesData);
+            // Save the blocklist sources config
+            await saveAndDownloadBlocklists('Preset applied');
 
             // Also update the main settings to reflect the preset change
             try {
@@ -1317,23 +1352,17 @@
 
                 if (result.success) {
                     const config = result.config;
-
-                    // Update the preset in blocklist settings
                     if (!config.blocklist) {
                         config.blocklist = {};
                     }
                     config.blocklist.update_preset = presetName;
 
-                    // Save the updated config
                     await fetch('/api/settings/save', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(config)
                     });
 
-                    // Update the settings UI if it's loaded
                     const presetSelect = document.getElementById('settingPreset');
                     if (presetSelect) {
                         presetSelect.value = presetName;
@@ -1343,17 +1372,82 @@
                 console.error('Error updating preset in main config:', error);
             }
 
-            // Show feedback
-            showSuccess(`Applied preset: ${presetName}`);
+            // Refresh display
+            displayBlocklistSources(blocklistSourcesData);
         }
 
-        function toggleSource(sourceId, enabled) {
+        async function toggleSource(sourceId, enabled) {
             if (!blocklistSourcesData || !blocklistSourcesData.sources) {
                 return;
             }
 
             if (blocklistSourcesData.sources[sourceId]) {
+                // Update the source enabled state
                 blocklistSourcesData.sources[sourceId].enabled = enabled;
+
+                // If we have an active preset, UPDATE the preset definition
+                if (currentActivePreset && blocklistSourcesData.presets[currentActivePreset]) {
+                    const preset = blocklistSourcesData.presets[currentActivePreset];
+                    if (!preset.sources) {
+                        preset.sources = [];
+                    }
+
+                    if (enabled) {
+                        // Add to preset if not already there
+                        if (!preset.sources.includes(sourceId)) {
+                            preset.sources.push(sourceId);
+                            console.log(`Added ${sourceId} to preset ${currentActivePreset}`);
+                        }
+                    } else {
+                        // Remove from preset
+                        const index = preset.sources.indexOf(sourceId);
+                        if (index > -1) {
+                            preset.sources.splice(index, 1);
+                            console.log(`Removed ${sourceId} from preset ${currentActivePreset}`);
+                        }
+                    }
+                }
+
+                // Save and download
+                await saveAndDownloadBlocklists(enabled ? `Added ${sourceId}` : `Removed ${sourceId}`);
+            }
+        }
+
+        async function saveAndDownloadBlocklists(action) {
+            try {
+                // 1. Save the config
+                const saveResponse = await fetch('/api/blocklist-sources/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(blocklistSourcesData)
+                });
+
+                const saveResult = await saveResponse.json();
+
+                if (!saveResult.success) {
+                    alert('Error saving: ' + (saveResult.error || 'Unknown error'));
+                    return;
+                }
+
+                showSuccess(`${action} - Saved! Downloading blocklists...`);
+
+                // 2. Trigger blocklist download
+                const reloadResponse = await fetch('/api/blocklist-sources/reload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const reloadResult = await reloadResponse.json();
+
+                if (reloadResult.success) {
+                    showSuccess(`${action} - Blocklists updating in background`);
+                } else {
+                    console.error('Reload failed:', reloadResult.error);
+                }
+
+            } catch (error) {
+                console.error('Error in saveAndDownloadBlocklists:', error);
+                alert('Error: ' + error.message);
             }
         }
 
@@ -1384,6 +1478,34 @@
             } catch (error) {
                 console.error('Error saving blocklist sources:', error);
                 alert('Error saving blocklist sources: ' + error.message);
+            }
+        }
+
+        async function reloadBlocklists() {
+            if (!confirm('This will download and update all enabled blocklists. This may take a few minutes. Continue?')) {
+                return;
+            }
+
+            try {
+                showSuccess('Updating blocklists... This may take a few minutes.');
+
+                const response = await fetch('/api/blocklist-sources/reload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(result.message || 'Blocklist update started!');
+                } else {
+                    alert('Error updating blocklists: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error updating blocklists:', error);
+                alert('Error updating blocklists: ' + error.message);
             }
         }
     </script>
