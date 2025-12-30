@@ -82,6 +82,7 @@ class DNSServer:
             'cached_queries': 0,
             'failed_queries': 0,
             'upstream_queries': 0,
+            'total_response_time_ms': 0,
             'start_time': None,
             'last_query_time': None
         }
@@ -258,6 +259,7 @@ class DNSServer:
         """
         with self.stats_lock:
             self.stats['blocked_queries'] += 1
+            self.stats['total_response_time_ms'] += response_time_ms
         self.logger.warning(f"BLOCKED: {domain}")
 
         # Create NXDOMAIN response (domain doesn't exist)
@@ -302,6 +304,7 @@ class DNSServer:
         with self.stats_lock:
             self.stats['cached_queries'] += 1
             self.stats['allowed_queries'] += 1
+            self.stats['total_response_time_ms'] += response_time_ms
 
         # Extract answer for logging
         answer_text = self._format_answer(cached_response.answer) if cached_response.answer else "cached"
@@ -370,12 +373,14 @@ class DNSServer:
                 self.logger.success(f"Resolved: {domain} → {answer_text}")
                 with self.stats_lock:
                     self.stats['allowed_queries'] += 1
+                    self.stats['total_response_time_ms'] += response_time_ms
             else:
                 # No answer (NXDOMAIN, SERVFAIL, etc.)
                 rcode = dns.rcode.to_text(response.rcode())
                 self.logger.info(f"No answer for {domain} ({rcode})")
                 with self.stats_lock:
                     self.stats['allowed_queries'] += 1
+                    self.stats['total_response_time_ms'] += response_time_ms
 
             # Send response to client
             self.sock.sendto(response.to_wire(), addr)
@@ -533,9 +538,7 @@ class DNSServer:
         stats['queries_cached'] = stats.get('cached_queries', 0)
         stats['queries_failed'] = stats.get('failed_queries', 0)
 
-        # Add total response time for average calculation
-        # (we'll need to track this - for now just use 0)
-        stats['total_response_time_ms'] = 0
+        # Total response time is already in stats from the copy
 
         # Add blocklist stats
         stats['blocklist_stats'] = self.blocklist.get_stats()
