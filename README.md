@@ -1,143 +1,63 @@
 # DNS Agent
 
-DNS sinkhole server with ad/malware blocking, caching, database logging, and web dashboard.
+A simple DNS sinkhole CLI tool for blocking ads, trackers, and malware at the DNS level.
+
+## About
+
+This project was inspired by [Goaway](https://github.com/AkaruiDevelopment/goaway). I wanted to learn more about how DNS works and what's happening on my network, so I built this small tool as a learning exercise.
+
+**Disclaimer:** This is not a professional tool. It started as a more complex project and was simplified down to what it is now. It works for my personal needs and was primarily built to understand DNS better. Use at your own discretion.
+
+## Features
+
+- DNS query blocking using community blocklists
+- Response caching for faster lookups
+- Web dashboard for monitoring queries
+- Automatic DNS management (sets system DNS on start, restores on stop)
+- Cross-platform support (macOS, Windows, Linux)
 
 ## Quick Start
 
-### 1. Activate the virtual environment
 ```bash
-source .venv/bin/activate
-```
+# Install
+uv tool install -e .
 
-### 2. Run DNS Agent
-```bash
-# Run on default port 5354 (no sudo required)
+# Run (automatically manages system DNS)
 dnsagent
 
-# Run on port 53 (requires sudo)
-sudo dnsagent --port 53
-```
+# Run without DNS management
+dnsagent --no-manage-dns
 
-### 3. Update blocklists
-```bash
-dnsagent-update-blocklists
+# Stop with Ctrl+C (restores original DNS)
 ```
 
 ## Usage
 
-### Start the DNS server
-```bash
-# Development mode (uses ./config and ./data)
-DNS_AGENT_DEV_MODE=1 dnsagent
+```text
+dnsagent --help
 
-# Production mode (uses ~/Library/Application Support/DNSAgent/)
-dnsagent
-
-# Custom port
-sudo dnsagent --port 53
-
-# Custom upstream DNS
-dnsagent --upstream 8.8.8.8
+options:
+  -h, --help           show this help message and exit
+  --config CONFIG      Path to config file
+  --host HOST          Override host from config
+  --port PORT          Override port from config
+  --upstream UPSTREAM  Override upstream DNS from config
+  --manage-dns         Automatically manage system DNS settings (default: enabled)
+  --no-manage-dns      Do NOT automatically manage system DNS settings
 ```
 
-### Access the Dashboard
-Once started, the web dashboard is available at:
-- **http://127.0.0.1:9880**
+## Dashboard
 
-Features:
-- Real-time DNS query monitoring
-- Block/Allow domain statistics
-- Blocklist source management
-- Settings configuration
-
-### Update Blocklists
-```bash
-# Update using current preset
-dnsagent-update-blocklists
-
-# Update using specific preset
-dnsagent-update-blocklists --preset aggressive
-
-# Update specific sources only
-dnsagent-update-blocklists --sources stevenblack adguard-dns
-
-# List available sources
-dnsagent-update-blocklists --list-sources
-
-# List available presets
-dnsagent-update-blocklists --list-presets
-```
+Once running, access the web dashboard at `http://127.0.0.1:9880`
 
 ## Configuration
 
-### Main Configuration
-Edit `~/Library/Application Support/DNSAgent/dns_agent.yml`:
-- Server settings (host, port, upstream DNS)
-- Cache settings
-- Database settings
-- Blocklist settings
-- Dashboard settings
-- Logging settings
+Config files are stored in:
 
-### Blocklist Sources
-Edit `~/Library/Application Support/DNSAgent/blocklist_sources.yml`:
-- Enable/disable specific blocklist sources
-- Configure presets (minimal, balanced, aggressive, family, productivity, security)
-- Add custom blocklist sources
+- **macOS**: `~/Library/Application Support/DNSAgent/`
+- **Windows**: `%APPDATA%/DNSAgent/`
+- **Linux**: `~/.config/DNSAgent/`
 
-### Development Mode
-Set `DNS_AGENT_DEV_MODE=1` to use local directories:
-- Config: `./config/`
-- Data: `./data/`
+## License
 
-## Data Locations
-
-### Production Mode
-- **Config**: `~/Library/Application Support/DNSAgent/`
-  - `dns_agent.yml` - Main configuration
-  - `blocklist_sources.yml` - Blocklist sources
-  - `blocklists.txt` - Merged blocklist
-  - `whitelist.txt` - Whitelist
-
-- **Data**: `~/Library/Application Support/DNSAgent/data/`
-  - `dns_agent.db` - SQLite database with query logs
-  - `dns_queries.log` - Rotating log file
-
-### Development Mode
-- **Config**: `./config/`
-- **Data**: `./data/`
-
-## Available Presets
-
-- **minimal**: Basic ad and malware blocking
-- **balanced**: Balanced protection (recommended)
-- **aggressive**: Maximum protection
-- **family**: Family-friendly (blocks adult content)
-- **productivity**: Blocks social media and distractions
-- **security**: Security-focused (malware and phishing)
-
-## Commands Reference
-
-### dnsagent
-Start the DNS server
-```bash
-dnsagent [--host HOST] [--port PORT] [--upstream UPSTREAM] [--config CONFIG]
-```
-
-### dnsagent-update-blocklists
-Update blocklists from configured sources
-```bash
-dnsagent-update-blocklists [--preset PRESET] [--sources SOURCE1 SOURCE2 ...]
-                          [--output FILE] [--list-sources] [--list-presets]
-```
-
-## Port 53 Note
-
-To run on port 53 (standard DNS port), you need root privileges:
-```bash
-sudo dnsagent --port 53
-```
-
-## Stopping the Server
-
-Press `Ctrl+C` to stop the server gracefully.
+MIT
