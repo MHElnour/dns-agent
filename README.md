@@ -50,6 +50,22 @@ options:
 
 Once running, access the web dashboard at `http://127.0.0.1:9880`
 
+### Main Dashboard
+
+![Dashboard](screenshots/dashboard.png)
+
+### Query Log
+
+![Query Log](screenshots/query-log.png)
+
+### Settings
+
+![Settings](screenshots/settings.png)
+
+### Blocklist Sources
+
+![Blocklist Sources](screenshots/blocklist-sources.png)
+
 ## Configuration
 
 Config files are stored in:
