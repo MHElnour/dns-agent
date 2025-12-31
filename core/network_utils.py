@@ -80,9 +80,23 @@ class NetworkDNSManager:
     def _get_active_interface_windows(self):
         """Get active network interface on Windows"""
         try:
+            # Get all active adapters, excluding virtual adapters (Hyper-V, WSL, VPN, etc.)
+            # Prioritize physical adapters (Wi-Fi, Ethernet) over virtual ones
             result = subprocess.run(
-                ['powershell', '-Command',
-                 "Get-NetAdapter | Where-Object {$_.Status -eq 'Up'} | Select-Object -First 1 -ExpandProperty Name"],
+                ['powershell', '-Command', '''
+                    $adapters = Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}
+                    # Prefer physical adapters (Wi-Fi, Ethernet) - exclude virtual/loopback
+                    $physical = $adapters | Where-Object {
+                        $_.InterfaceDescription -notmatch 'Virtual|Hyper-V|WSL|VPN|Loopback' -and
+                        $_.Name -notmatch 'vEthernet|Loopback'
+                    } | Select-Object -First 1
+                    if ($physical) {
+                        $physical.Name
+                    } else {
+                        # Fallback to any active adapter if no physical found
+                        $adapters | Select-Object -First 1 -ExpandProperty Name
+                    }
+                '''],
                 capture_output=True, text=True, check=True
             )
             interface = result.stdout.strip()
@@ -196,7 +210,7 @@ class NetworkDNSManager:
             return False
 
     def _set_dns_windows(self, dns_servers):
-        """Set DNS servers on Windows"""
+        """Set DNS servers on Windows (requires admin privileges)"""
         if not self.network_interface:
             return False
         try:
@@ -210,7 +224,16 @@ class NetworkDNSManager:
 
             self.logger.info(f"Setting DNS for {self.network_interface}: {dns_servers or 'DHCP'}")
             result = subprocess.run(cmd, capture_output=True, text=True)
-            return result.returncode == 0
+            
+            if result.returncode != 0:
+                # Check if it's a permission error
+                if 'Access is denied' in result.stderr or 'PermissionDenied' in result.stderr:
+                    self.logger.warning("Admin privileges required to change DNS settings")
+                    self.logger.info("Run as Administrator or use: Start-Process dnsagent -Verb RunAs")
+                elif result.stderr:
+                    self.logger.error(f"PowerShell error: {result.stderr.strip()}")
+                return False
+            return True
         except Exception as e:
             self.logger.error(f"Error setting DNS: {e}")
             return False
