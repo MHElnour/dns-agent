@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dns-agent"
-version = "0.1.0"
+version = "0.1.1"
 description = "DNS sinkhole server with ad/malware blocking, caching, database logging, and web dashboard"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -40,10 +40,11 @@ Repository = "https://github.com/MHElnour/dns-agent"
 py-modules = ["main"]
 
 [tool.setuptools.packages.find]
-include = ["core*", "ui*"]
+include = ["core*", "ui*", "config*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yml", "*.yaml", "*.html", "*.css", "*.js"]
+"config" = ["*.yml", "*.yaml"]
 
 [dependency-groups]
 dev = [
