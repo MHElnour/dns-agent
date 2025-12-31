@@ -111,6 +111,10 @@ def setup_initial_config():
 
     config_dir = get_config_dir()
 
+    # Get the package directory (where this module is installed)
+    # This works whether running from source or installed as a package
+    package_dir = Path(__file__).parent.parent
+
     # Files to copy from package to user config directory
     template_files = [
         ('config/dns_agent.yml', config_dir / 'dns_agent.yml'),
@@ -118,8 +122,8 @@ def setup_initial_config():
     ]
 
     # Copy each template file if it doesn't exist in user config
-    for template_path, dest_path in template_files:
-        template = Path(template_path)
+    for template_rel_path, dest_path in template_files:
+        template = package_dir / template_rel_path
 
         # Skip if destination already exists
         if dest_path.exists():

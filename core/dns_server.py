@@ -127,13 +127,14 @@ class DNSServer:
             self.logger.info("Starting DNS server...")
             self.stats['start_time'] = datetime.now()
 
-            # Load blocklist
-            self.blocklist.load(self.logger)
-
-            # Start auto-updater if enabled
+            # Start auto-updater if enabled (downloads blocklists on startup if configured)
+            # This must happen BEFORE loading blocklists so the file exists on first run
             if self.auto_updater:
                 update_on_startup = self.config.get('blocklist.update_on_startup', True) if self.config else False
                 self.auto_updater.start(update_on_startup=update_on_startup)
+
+            # Load blocklist (after auto-updater has had a chance to download on first run)
+            self.blocklist.load(self.logger)
 
             # Start web dashboard if enabled
             if self.dashboard:
@@ -181,6 +182,13 @@ class DNSServer:
                     if self.shutdown_event.is_set():
                         break
                     continue
+                except OSError as e:
+                    # Windows-specific: WinError 10054 (WSAECONNRESET)
+                    # This happens when the remote host sends ICMP "port unreachable"
+                    # It's harmless for UDP servers and can be safely ignored
+                    if hasattr(e, 'winerror') and e.winerror == 10054:
+                        continue
+                    raise
 
                 # Submit query to thread pool for concurrent handling
                 self.executor.submit(self._handle_query, data, addr)
