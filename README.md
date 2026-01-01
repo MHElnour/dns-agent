@@ -20,13 +20,12 @@ This project was inspired by [Goaway](https://github.com/AkaruiDevelopment/goawa
 
 ```bash
 # Install
-uv tool install -e .
+uv tool install git+https://github.com/MHElnour/dns-agent.git@v0.1.3
 
-# Run (automatically manages system DNS)
-dnsagent
+dnsagent --port 53
 
 # Run without DNS management
-dnsagent --no-manage-dns
+dnsagent --no-manage-dns --port 53
 
 # Stop with Ctrl+C (restores original DNS)
 ```
