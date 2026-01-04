@@ -22,3 +22,6 @@ data/
 # User configuration (production)
 config/blocklists.txt
 config/whitelist.txt
+
+# Serena IDE config
+.serena/
